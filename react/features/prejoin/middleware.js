@@ -18,6 +18,7 @@ import {
     setPrejoinPageVisibility
 } from './actions';
 import { isPrejoinPageVisible } from './functions';
+import logger from '../analytics/logger';
 
 declare var APP: Object;
 
@@ -30,6 +31,8 @@ declare var APP: Object;
 MiddlewareRegistry.register(store => next => async action => {
     switch (action.type) {
     case PREJOIN_START_CONFERENCE: {
+        console.log(`MidlewareRegistry CASE PREJOIN_START_CONFERENCE`)
+
         const { getState, dispatch } = store;
         const state = getState();
         const { userSelectedSkipPrejoin } = state['features/prejoin'];

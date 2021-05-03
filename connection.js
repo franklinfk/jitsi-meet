@@ -46,10 +46,7 @@ function checkForAttachParametersAndConnect(id, password, connection) {
         // If the connection optimization is deployed and enabled and there is
         // a failure the value will be window.XMPPAttachInfo.status = "error"
         if (window.XMPPAttachInfo.status === 'error') {
-            connection.connect({
-                id,
-                password
-            });
+            connection.connect({ id, password });
 
             return;
         }
@@ -59,18 +56,16 @@ function checkForAttachParametersAndConnect(id, password, connection) {
         if (attachOptions) {
             connection.attach(attachOptions);
             delete window.XMPPAttachInfo.data;
+
         } else {
-            connection.connect({
-                id,
-                password
-            });
+            connection.connect({ id, password });
+
         }
+
     } else {
         APP.connect.status = 'ready';
-        APP.connect.handler
-            = checkForAttachParametersAndConnect.bind(
-                null,
-                id, password, connection);
+        APP.connect.handler = checkForAttachParametersAndConnect.bind( null, id, password, connection);
+
     }
 }
 
@@ -83,6 +78,8 @@ function checkForAttachParametersAndConnect(id, password, connection) {
  * everything is ok, else error.
  */
 export function connect(id, password, roomName) {
+    console.log(`connection.js Connect() id[${id}], roomName[${roomName}]`);
+
     const connectionConfig = Object.assign({}, config);
     const { jwt } = APP.store.getState()['features/base/jwt'];
 
@@ -100,6 +97,7 @@ export function connect(id, password, roomName) {
         connectionConfig.websocketKeepAliveUrl += `?room=${roomName}`;
     }
 
+    console.log(`Creating a new Instance of JitsiMeetJS.JitsiConnection. connectionConfig.serviceUrl[${connectionConfig.serviceUrl}]`);
     const connection = new JitsiMeetJS.JitsiConnection(null, jwt, connectionConfig);
 
     if (config.iAmRecorder) {
@@ -107,19 +105,10 @@ export function connect(id, password, roomName) {
     }
 
     return new Promise((resolve, reject) => {
-        connection.addEventListener(
-            JitsiConnectionEvents.CONNECTION_ESTABLISHED,
-            handleConnectionEstablished);
-        connection.addEventListener(
-            JitsiConnectionEvents.CONNECTION_FAILED,
-            handleConnectionFailed);
-        connection.addEventListener(
-            JitsiConnectionEvents.CONNECTION_FAILED,
-            connectionFailedHandler);
-        connection.addEventListener(
-            JitsiConnectionEvents.DISPLAY_NAME_REQUIRED,
-            displayNameRequiredHandler
-        );
+        connection.addEventListener( JitsiConnectionEvents.CONNECTION_ESTABLISHED, handleConnectionEstablished);
+        connection.addEventListener( JitsiConnectionEvents.CONNECTION_FAILED, handleConnectionFailed);
+        connection.addEventListener( JitsiConnectionEvents.CONNECTION_FAILED, connectionFailedHandler);
+        connection.addEventListener( JitsiConnectionEvents.DISPLAY_NAME_REQUIRED, displayNameRequiredHandler);
 
         /* eslint-disable max-params */
         /**
@@ -127,19 +116,10 @@ export function connect(id, password, roomName) {
          */
         function connectionFailedHandler(error, message, credentials, details) {
         /* eslint-enable max-params */
-            APP.store.dispatch(
-                connectionFailed(
-                    connection, {
-                        credentials,
-                        details,
-                        message,
-                        name: error
-                    }));
+            APP.store.dispatch( connectionFailed(connection, {credentials, details, message, name: error }));
 
             if (isFatalJitsiConnectionError(error)) {
-                connection.removeEventListener(
-                    JitsiConnectionEvents.CONNECTION_FAILED,
-                    connectionFailedHandler);
+                connection.removeEventListener(JitsiConnectionEvents.CONNECTION_FAILED, connectionFailedHandler);
             }
         }
 
@@ -147,12 +127,8 @@ export function connect(id, password, roomName) {
          *
          */
         function unsubscribe() {
-            connection.removeEventListener(
-                JitsiConnectionEvents.CONNECTION_ESTABLISHED,
-                handleConnectionEstablished);
-            connection.removeEventListener(
-                JitsiConnectionEvents.CONNECTION_FAILED,
-                handleConnectionFailed);
+            connection.removeEventListener(JitsiConnectionEvents.CONNECTION_ESTABLISHED, handleConnectionEstablished);
+            connection.removeEventListener(JitsiConnectionEvents.CONNECTION_FAILED, handleConnectionFailed);
         }
 
         /**
@@ -199,10 +175,8 @@ export function connect(id, password, roomName) {
  * @returns {Promise<JitsiConnection>}
  */
 export function openConnection({ id, password, retry, roomName }) {
-    const usernameOverride
-        = jitsiLocalStorage.getItem('xmpp_username_override');
-    const passwordOverride
-        = jitsiLocalStorage.getItem('xmpp_password_override');
+    const usernameOverride = jitsiLocalStorage.getItem('xmpp_username_override');
+    const passwordOverride = jitsiLocalStorage.getItem('xmpp_password_override');
 
     if (usernameOverride && usernameOverride.length > 0) {
         id = usernameOverride; // eslint-disable-line no-param-reassign

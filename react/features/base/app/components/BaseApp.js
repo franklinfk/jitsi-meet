@@ -192,13 +192,11 @@ export default class BaseApp extends Component<*, State> {
         // available for the purposes of facilitating development.
         let devToolsExtension;
 
-        if (typeof window === 'object'
-                && (devToolsExtension = window.devToolsExtension)) {
+        if (typeof window === 'object' && (devToolsExtension = window.devToolsExtension)) {
             middleware = compose(middleware, devToolsExtension());
         }
 
-        const store = createStore(
-            reducer, PersistenceRegistry.getPersistedState(), middleware);
+        const store = createStore(reducer, PersistenceRegistry.getPersistedState(), middleware);
 
         // StateListenerRegistry
         StateListenerRegistry.subscribe(store);

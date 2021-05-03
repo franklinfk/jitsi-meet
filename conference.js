@@ -134,12 +134,16 @@ import { AudioMixerEffect } from './react/features/stream-effects/audio-mixer/Au
 import { createPresenterEffect } from './react/features/stream-effects/presenter';
 import { endpointMessageReceived } from './react/features/subtitles';
 import UIEvents from './service/UI/UIEvents';
+import { loadConfigError } from './react/features/base/config';
 
 const logger = Logger.getLogger(__filename);
 
 const eventEmitter = new EventEmitter();
 
+// room is a instance of JitsiConference
 let room;
+
+// room is a instance of JitsiConnection
 let connection;
 
 /**
@@ -187,6 +191,8 @@ const commands = {
  * @returns Promise<JitsiConnection>
  */
 function connect(roomName) {
+    console.log(`conference.js. connect(). roomName[${roomName}]`)
+
     return openConnection({
         retry: true,
         roomName
@@ -275,10 +281,8 @@ class ConferenceConnector {
         this._resolve = resolve;
         this._reject = reject;
         this.reconnectTimeout = null;
-        room.on(JitsiConferenceEvents.CONFERENCE_JOINED,
-            this._handleConferenceJoined.bind(this));
-        room.on(JitsiConferenceEvents.CONFERENCE_FAILED,
-            this._onConferenceFailed.bind(this));
+        room.on(JitsiConferenceEvents.CONFERENCE_JOINED, this._handleConferenceJoined.bind(this));
+        room.on(JitsiConferenceEvents.CONFERENCE_FAILED, this._onConferenceFailed.bind(this));
     }
 
     /**
@@ -312,8 +316,7 @@ class ConferenceConnector {
                 room.join();
             }, 5000);
 
-            const { password }
-                = APP.store.getState()['features/base/conference'];
+            const { password } = APP.store.getState()['features/base/conference'];
 
             AuthHandler.requireAuth(room, password);
 
@@ -372,12 +375,9 @@ class ConferenceConnector {
      *
      */
     _unsubscribe() {
-        room.off(
-            JitsiConferenceEvents.CONFERENCE_JOINED,
-            this._handleConferenceJoined);
-        room.off(
-            JitsiConferenceEvents.CONFERENCE_FAILED,
-            this._onConferenceFailed);
+        room.off(JitsiConferenceEvents.CONFERENCE_JOINED, this._handleConferenceJoined);
+        room.off(JitsiConferenceEvents.CONFERENCE_FAILED, this._onConferenceFailed);
+        
         if (this.reconnectTimeout !== null) {
             clearTimeout(this.reconnectTimeout);
         }
@@ -653,12 +653,7 @@ export default {
      * @private
      */
     _displayErrorsForCreateInitialLocalTracks(errors) {
-        const {
-            audioAndVideoError,
-            audioOnlyError,
-            screenSharingError,
-            videoOnlyError
-        } = errors;
+        const {audioAndVideoError, audioOnlyError, screenSharingError, videoOnlyError} = errors;
 
         // FIXME If there will be microphone error it will cover any screensharing dialog, but it's still better than in
         // the reverse order where the screensharing dialog will sometimes be closing the microphone alert
@@ -699,6 +694,8 @@ export default {
      * @returns {Promise.<JitsiLocalTrack[], JitsiConnection>}
      */
     createInitialLocalTracksAndConnect(roomName, options = {}) {
+        console.log(`conference.js creating Local Tracks and Connecting`)
+
         const { tryCreateLocalTracks, errors } = this.createInitialLocalTracks(options);
 
         return Promise.all([ tryCreateLocalTracks, connect(roomName) ])
@@ -711,13 +708,14 @@ export default {
     },
 
     startConference(con, tracks) {
+        logger.info(`Starting conference track.length[${tracks.length}]`);
+
         tracks.forEach(track => {
             if ((track.isAudioTrack() && this.isLocalAudioMuted())
                 || (track.isVideoTrack() && this.isLocalVideoMuted())) {
                 const mediaType = track.getType();
 
-                sendAnalytics(
-                    createTrackMutedEvent(mediaType, 'initial mute'));
+                sendAnalytics(createTrackMutedEvent(mediaType, 'initial mute'));
                 logger.log(`${mediaType} mute: initially muted.`);
                 track.mute();
             }
@@ -770,6 +768,8 @@ export default {
      * @returns {Promise}
      */
     async init({ roomName }) {
+        logger.info(`conference.js init(). Initializing a conference. roomName[${roomName}]`)
+
         const initialOptions = {
             startAudioOnly: config.startAudioOnly,
             startScreenSharing: config.startScreenSharing,
@@ -794,6 +794,8 @@ export default {
         }
 
         if (isPrejoinPageEnabled(APP.store.getState())) {
+            logger.info(`if isPrejoinPageEnabled() --- TRUE`)
+
             _connectionPromise = connect(roomName).then(c => {
                 // we want to initialize it early, in case of errors to be able
                 // to gather logs
@@ -842,6 +844,8 @@ export default {
      * @returns {Promise}
      */
     async prejoinStart(tracks) {
+        logger.info(`Prejoining a conference`);
+
         const con = await _connectionPromise;
 
         return this.startConference(con, tracks);
@@ -863,8 +867,7 @@ export default {
     isLocalVideoMuted() {
         // If the tracks are not ready, read from base/media state
         return this._localTracksInitialized
-            ? isLocalCameraTrackMuted(
-                APP.store.getState()['features/base/tracks'])
+            ? isLocalCameraTrackMuted(APP.store.getState()['features/base/tracks'])
             : isVideoMutedByUser(APP.store);
     },
 
@@ -875,8 +878,7 @@ export default {
      * dialogs in case of media permissions error.
      */
     muteAudio(mute, showUI = true) {
-        if (!mute
-                && isUserInteractionRequiredForUnmute(APP.store.getState())) {
+        if (!mute && isUserInteractionRequiredForUnmute(APP.store.getState())) {
             logger.error('Unmuting audio requires user interaction');
 
             return;
@@ -921,11 +923,8 @@ export default {
     isLocalAudioMuted() {
         // If the tracks are not ready, read from base/media state
         return this._localTracksInitialized
-            ? isLocalTrackMuted(
-                APP.store.getState()['features/base/tracks'],
-                MEDIA_TYPE.AUDIO)
-            : Boolean(
-                APP.store.getState()['features/base/media'].audio.muted);
+            ? isLocalTrackMuted(APP.store.getState()['features/base/tracks'], MEDIA_TYPE.AUDIO)
+            : Boolean(APP.store.getState()['features/base/media'].audio.muted);
     },
 
     /**
@@ -953,16 +952,20 @@ export default {
         if (mute) {
             try {
                 await this.localVideo.setEffect(undefined);
+
             } catch (err) {
                 logger.error('Failed to remove the presenter effect', err);
                 maybeShowErrorDialog(err);
+
             }
         } else {
             try {
                 await this.localVideo.setEffect(await this._createPresenterStreamEffect());
+
             } catch (err) {
                 logger.error('Failed to apply the presenter effect', err);
                 maybeShowErrorDialog(err);
+
             }
         }
     },
@@ -974,8 +977,7 @@ export default {
      * dialogs in case of media permissions error.
      */
     muteVideo(mute, showUI = true) {
-        if (!mute
-                && isUserInteractionRequiredForUnmute(APP.store.getState())) {
+        if (!mute && isUserInteractionRequiredForUnmute(APP.store.getState())) {
             logger.error('Unmuting video requires user interaction');
 
             return;
@@ -1321,10 +1323,7 @@ export default {
     },
 
     _createRoom(localTracks) {
-        room
-            = connection.initJitsiConference(
-                APP.conference.roomName,
-                this._getConferenceOptions());
+        room = connection.initJitsiConference(APP.conference.roomName, this._getConferenceOptions());
 
         APP.store.dispatch(conferenceWillJoin(room));
 
