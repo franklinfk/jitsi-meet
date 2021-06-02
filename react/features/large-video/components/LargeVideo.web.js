@@ -80,7 +80,7 @@ class LargeVideo extends Component<Props> {
                 </div>
                 <div id = 'etherpad' />
 
-                <Watermarks />
+                {/* COMMENTED OUT BY FK <Watermarks /> */}
 
                 <div id = 'dominantSpeaker'>
                     <div className = 'dynamic-shadow' />

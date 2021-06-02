@@ -104,6 +104,8 @@ export function getBaseUrl(w: Object = window) {
  * NOTE: After React-ifying everything this should be the only global.
  */
 export function getJitsiMeetGlobalNS() {
+    console.log('Helpers.js --- getJitsiMeetGlobalNS() --- Setting up the Global Variables "window.JitsiMeetJS" AND "window.JitsiMeetJS.app"')
+
     if (!window.JitsiMeetJS) {
         window.JitsiMeetJS = {};
     }

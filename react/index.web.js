@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const now = window.performance.now();
 
     APP.connectionTimes['document.ready'] = now;
-    logger.log('(TIME) document ready:\t', now);
+    logger.log('Index.web.js --- (TIME) document ready:\t', now);
 });
 
 // Workaround for the issue when returning to a page with the back button and

@@ -108,11 +108,9 @@ class WelcomePage extends AbstractWelcomePage {
         this._onFormSubmit = this._onFormSubmit.bind(this);
         this._onRoomChange = this._onRoomChange.bind(this);
         this._setAdditionalCardRef = this._setAdditionalCardRef.bind(this);
-        this._setAdditionalContentRef
-            = this._setAdditionalContentRef.bind(this);
+        this._setAdditionalContentRef = this._setAdditionalContentRef.bind(this);
         this._setRoomInputRef = this._setRoomInputRef.bind(this);
-        this._setAdditionalToolbarContentRef
-            = this._setAdditionalToolbarContentRef.bind(this);
+        this._setAdditionalToolbarContentRef = this._setAdditionalToolbarContentRef.bind(this);
         this._onTabSelected = this._onTabSelected.bind(this);
         this._renderFooter = this._renderFooter.bind(this);
     }
@@ -202,6 +200,7 @@ class WelcomePage extends AbstractWelcomePage {
                     <div className = 'header-container'>
                         <h1 className = 'header-text-title'>
                             { t('welcomepage.headerTitle') }
+                            TEXT INSERTED BY FRANKLIN
                         </h1>
                         <span className = 'header-text-subtitle'>
                             { t('welcomepage.headerSubtitle')}
